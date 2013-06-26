@@ -1,0 +1,30 @@
+=pod
+
+=encoding utf8
+
+=head1 NAZWA
+
+lspack - szukaj w zainstalowanych pakietach
+
+=head1 SKŁADNIA
+
+lspack regexp [opcje]
+
+=head1 OPCJE
+
+I<-v> pokaż wersję pakietu
+
+I<-d> szukaj także w opisach pakietu
+
+I<-h> pokaż pomoc
+
+=head1 OPIS
+
+Program wyszukuje wśród zainstalowanych pakietów w systemie pakiety pasujące do regexp. Domyślnie pomija opisy pakietów, które można dołączyć za pomocą opcji -d. Opcja -v wyświetla dodatkowo wersje pakietów.
+
+=head1 AUTOR
+
+Piotr Rogoża <rogoza.piotr@wp.eu>
+
+=cut
+
