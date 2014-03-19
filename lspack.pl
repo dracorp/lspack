@@ -179,7 +179,7 @@ sub print_programs {    #{{{
         if ( $option{version} ) {
             print color 'green' if $option{color};
             printf "%-$max_length_version" . 's', "$list_programs_ref->{$program}->[$PROGRAM_VERS]";
-            print color 'reset' if !$option{color};
+            print color 'reset' if $option{color};
         }
         if ( $option{description} ) {
 #            print " $list_programs_ref->{$program}->[$PROGRAM_DESC]";
