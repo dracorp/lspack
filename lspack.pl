@@ -323,6 +323,9 @@ sub find_package_debian {    #{{{
     return $list_programs_ref;
 }    # ----------  end of subroutine debian  ----------}}}
 
+sub find_package_linuxmint(){
+    find_package_debian(@_);
+}
 #}}}
 #---------------------------------------------------------------------------
 #  Main program
