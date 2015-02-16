@@ -1,20 +1,17 @@
 # Lspack
 
-* Lists installed packages match the pattern. Currently works only on Archlinux and Debian.
+* Lists installed packages match to the pattern. Currently works only on Archlinux and Debian (and other fork).
 
 ## Usage
 
-lspack 'pattern' [-v|-h|-d|-s|-v]
+lspack.pl 'pattern' [options]
 
 ## Options
 
-* **-a** - shows a architecture
-* **-v** - shows versions of packages
-* **-d** - shows descriptions of packages
-* **-s** - searches in description of packages
-* **-h** - show this help
+* **-a** - show a architecture
+* **-v** - show versions of packages
+* **-d** - show descriptions of packages
+* **-s** - search in description of packages
+* **-o os** - don't detect name of operating system, get this
 
-* **--color** - uses color
-* **--nocolor|--no-color** - doesn't use color
-* **--about** - about the program
-* **--vesion** - prints the version number
+* **-c** - use colors
