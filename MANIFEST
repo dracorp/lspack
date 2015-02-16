@@ -2,5 +2,6 @@ Changes
 Makefile.PL
 MANIFEST
 README
-t/lspack.t
+t/01_pod.t
 lib/bash-completion/arch/lspack.sh
+bin/lspack.pl

@@ -1,4 +1,4 @@
-use 5.020001;
+use 5.010000;
 use ExtUtils::MakeMaker;
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
@@ -7,13 +7,14 @@ WriteMakefile(
     VERSION_FROM    => 'bin/lspack.pl',
     LICENSE         => 'perl',
     dist            => {
-        COMPRESS=>'gzip -9f', EXT=>'gz',
-        DIST_DEFAULT => 'tardist'
+        COMPRESS        => 'gzip -9f',
+        EXT             => 'gz',
+        DIST_DEFAULT    => 'tardist'
     },
     PREREQ_PM       => {
-        Getopt::Long        => 0,
-        Linux::Distribution => 0,
-        Term::ANSIColor     => 0,
+        'Getopt::Long'        => 0,
+        'Linux::Distribution' => 0,
+        'Term::ANSIColor'     => 0,
     },
     EXE_FILES       => [ qw(bin/lspack.pl) ],
     ABSTRACT        => 'Search package among installed packages',
