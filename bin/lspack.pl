@@ -1,61 +1,55 @@
 #!/usr/bin/perl
 #===============================================================================
-#
-#         FILE:  lspack.pl
-#
-#        USAGE:  ./lspack.pl  [-v|-h|-d|-s|-V] pattern
-#
-#   DESCRIPTION:  Lists installed packages match to the pattern. Currently Works only on Archlinux, Debian
-#
-#      OPTIONS:  [-v|-h|-d|-s|-V]
-# REQUIREMENTS:  perl
-#         BUGS:  ---
-#        NOTES:  ---
-#       AUTHOR:  Piotr Rogoża (piecia), rogoza.piotr@gmail.com
-#      COMPANY:  dracoRP
-#      VERSION:  1.4
-#      CREATED:  27.05.2011 17:46:13
-# 	  MODIFIED:  06.06.2011 09:18:21
-#     REVISION:  ---
+#       AUTHOR: Piotr Rogoza piotr dot r dot public at gmail dot com
+#         DATE: $Date$
+#     REVISION: $Revision$
+#           ID: $Id$
 #===============================================================================
 
 use strict;
 use warnings;
-require 5.001;
 
 use Carp;
 use Getopt::Long;
 Getopt::Long::Configure('bundling');
-use feature qw(say);
 
-#use encoding 'utf8';
-use Linux::Distribution qw(distribution_name);
 use English '-no_match_vars';
 use Readonly;
 use Term::ANSIColor;
 
-my $NAME        = 'lspack';
-my $AUTHOR      = 'Piotr Rogoża';
-our $VERSION    = 1.4.1;
-
-# Don't modify below variables!!! {{{
-#---------------------------------------------------------------------------
-# untainted PATH
-local $ENV{PATH} = '/usr/bin';
+my $NAME        = 'lspack.pl';
+our $VERSION    = 1.4.2;
 
 # Startup parameters
 my %option;
 GetOptions(
-    'a'                 => \$option{architecture},
-    'v'                 => \$option{version},
-    'd'                 => \$option{description},
-    's'                 => \$option{search},
-    'nocolor|no-color'  => \$option{nocolor},
-    'color'             => \$option{color},
-    'h'                 => \&help,
-    'about'             => \&about,
-);
+    'a|print-arch'      => \$option{architecture},
+    'v|print-version'   => \$option{version},
+    'd|print-desc'      => \$option{description},
+    's|search'          => \$option{search_in_desc},
+    'c|color'           => \$option{color},
+    'h|help'            => \$option{help},
+    'o|os=s'            => \$option{os},
+) or die "Error in command line arguments. Try \`$NAME --help\`";
 
+if( !$option{os} ){
+    require Linux::Distribution;
+    Linux::Distribution->import( qw(distribution_name) );
+}
+sub usage { #{{{
+    system "pod2usage $PROGRAM_NAME";
+} # end of sub usage }}}
+sub help { #{{{
+    system "pod2text $PROGRAM_NAME";
+} # end of sub help }}}
+if ( $option{help} ){
+    help;
+    exit;
+}
+unless (@ARGV){
+    usage;
+    exit;
+}
 # indexes for array
 Readonly my $PROGRAM_VERS => 0;
 Readonly my $PROGRAM_DESC => 1;
@@ -65,58 +59,20 @@ Readonly my $PROGRAM_ARCH => 2;
 Readonly my $SPACE => q{ };
 Readonly my $TAB   => qq{\t};
 
-my $distr_command = q{};                        # command for specified distribution
-
-#}}}
-#{{{ Functions
-sub about {    #{{{
-    print q{Search for installed packages that match the pattern}, "\n";
-    exit 0;
-}    # ----------  end of subroutine about  ----------}}}
-
-sub version { #{{{
-    print "$NAME $VERSION\nAuthor $AUTHOR\n";
-    exit 0;
-} ## --- end of sub version }}}
-
-sub help {    #{{{
-    print <<ENDHELP;
-Usage: $NAME 'pattern' [-v|-h|-d|-s|-V]
-    -a - show a architecture
-    -v - show versions of packages
-    -d - show descriptions of packages
-    -s - search in package's description
-
-    --color     - use color
-    --nocolor, --no-color - don't use color
-    --about     - about the program
-    --version   - about version the program
-    -h          - show this help;
-ENDHELP
-    exit 0;
-}    # ----------  end of subroutine usage  ----------}}}
-
-sub max_length_str { #{{{
-    my ($array_ref) = @_;
-    my $max_length = 0;
-    foreach my $string ( @{$array_ref} ){
-        if ( length $string > $max_length ){
-            $max_length = length $string;
-        }
-    }
-    return $max_length;
-} ## --- end of sub max_length_str }}}
-
-sub print_programs {    #{{{
-
-    #===  FUNCTION  ================================================================
-    #         NAME:  print_programs
-    #   PARAMETERS:  ref to hash
-    #  DESCRIPTION:  Prints hash %programs which contains found programs, thei versions and descriptions
-    #===============================================================================
-    my ($list_programs_ref, $pattern) = @_;
+sub print_programs { #{{{
+#===  FUNCTION  ================================================================
+#         NAME: print_programs
+#      PURPOSE:
+#   PARAMETERS: ref to HASH, pattern
+#      RETURNS: ????
+#  DESCRIPTION: Prints hash %programs which contains found programs, their versions and descriptions
+#       THROWS: no exceptions
+#     COMMENTS: none
+#     SEE ALSO: n/a
+#===============================================================================
+    my ( $list_programs_ref, $pattern ) = @_;
     if ( ref $list_programs_ref ne 'HASH' ) {
-        croak q{Error while call sub, expected ref to hash as the first  parameter};
+        croak q{Error while call sub, expected ref to hash as the first parameter};
     }
     if (!$pattern){
         croak q{Pattern not specified};
@@ -153,7 +109,7 @@ sub print_programs {    #{{{
     # print program, version and description
     foreach my $program ( sort keys %{$list_programs_ref} ) {
         print color 'bold white' if $option{color};
-        if ($option{search}) {       #search in description
+        if ($option{search_in_desc}) {       #search in description
             if ( !$option{version} && !$option{description} ){
                 print "$program";
             }
@@ -191,25 +147,27 @@ sub print_programs {    #{{{
         print "\n";
     }
     return;
-}    # ----------  end of subroutine print_programs  ----------}}}
-
-sub find_package_arch {    #{{{
-
-    #===  FUNCTION  ================================================================
-    #         NAME:  archlinux
-    #   PARAMETERS:  ref to hash
-    #  DESCRIPTION:  store founded programs matched to pattern, their versions and descriptions into hash
-    #===============================================================================
-    my ($pattern) = @_;
-    use strict;
-    if ( !$pattern){
+} # end of sub print_programs }}}
+sub find_package_arch { #{{{
+#===  FUNCTION  ================================================================
+#         NAME: find_package_arch
+#      PURPOSE:
+#   PARAMETERS: pattern to search
+#      RETURNS: ref to hash
+#  DESCRIPTION: store found programs matched to pattern, their versions and descriptions into hash
+#       THROWS: no exceptions
+#     COMMENTS: none
+#     SEE ALSO: n/a
+#===============================================================================
+    my ( $pattern ) = @_;
+    if ( !$pattern ){
         croak q{Pattern not specified},"\n";
     }
 
     # ref to HASH, program as key, array of version, description, architecture as value
     my $list_programs_ref = {};
     my @data =  ();
-    $distr_command = q{/usr/bin/pacman -Qs};
+    my $distr_command = q{/usr/bin/pacman -Qs};
     my $command_info = q{LC_ALL=C /usr/bin/pacman -Qi};
 
     open my ($fh), q{-|}, qq{$distr_command '} . $pattern . q{'; true}
@@ -233,10 +191,10 @@ sub find_package_arch {    #{{{
             if (($key, $desc )
                 = $line =~ m{
                     ^local/
-                    ([\S]+)                     # nazwa programu
+                    ([\S]+)                     # program name
                     \s
-                    ([\S]+)                     # opis
-			    }xms
+                    ([\S]+)                     # description
+                    }xms
                 )
             {
                 $list_programs_ref->{$key}->[$PROGRAM_VERS] = $desc;
@@ -269,17 +227,20 @@ sub find_package_arch {    #{{{
         $count++;
     }
     return $list_programs_ref;
-}    # ----------  end of subroutine archlinux  ----------}}}
-
-sub find_package_debian {    #{{{
-
-    #===  FUNCTION  ================================================================
-    #         NAME:  debian
-    #   PARAMETERS:  ref to hash
-    #  DESCRIPTION:  store founded programs matched to pattern, their versions and descriptions into hash
-    #===============================================================================
-    my ($pattern) = @_;
-    use strict;
+} # end of sub find_package_arch }}}
+sub find_package_debian { #{{{
+#===  FUNCTION  ================================================================
+#         NAME: find_package_debian
+#      PURPOSE:
+#   PARAMETERS: pattern
+#      RETURNS: ref to hash
+#  DESCRIPTION: ????
+#  DESCRIPTION: store found programs matched to pattern, their versions and descriptions into hash
+#       THROWS: no exceptions
+#     COMMENTS: none
+#     SEE ALSO: n/a
+#===============================================================================
+    my ( $pattern ) = @_;
     if ( !$pattern){
         croak q{Pattern not specified},"\n";
     }
@@ -287,7 +248,7 @@ sub find_package_debian {    #{{{
     # ref to HASH, program as key, array of version and description as value
     my $list_programs_ref = {};
     my @data =  ();
-    $distr_command = q{/usr/bin/dpkg -l};
+    my $distr_command = q{/usr/bin/dpkg -l};
     $pattern =~ s{(.*)}{*$1*}xms;
 
     open my ($fh), q{-|}, qq{$distr_command '} . $pattern . q{'; true}
@@ -301,18 +262,17 @@ sub find_package_debian {    #{{{
         exit;
     }
 
-    #	my %programs;
     foreach my $line (@data) {
         chomp $line;
         my ($version, $desc, $package);
         if ( ($package, $version, $desc) = $line =~ m{
                 ^[ih]i                          # installed|hold
 				\s+
-				(\S+)                           # package
+				(\S+)           # package
 				\s+
-				(\S+)                           # version
+				(\S+)           # version
 				\s+
-				(.*$)                           # description
+				(.*$)           # description
 			}xms
             )
         {
@@ -321,15 +281,23 @@ sub find_package_debian {    #{{{
         }
     }
     return $list_programs_ref;
-}    # ----------  end of subroutine debian  ----------}}}
-
-sub find_package_linuxmint(){
-    find_package_debian(@_);
-}
-#}}}
-#---------------------------------------------------------------------------
+} # end of sub find_package_debian  }}}
+sub find_package_linuxmint { #{{{
+#===  FUNCTION  ================================================================
+#         NAME: find_package_linuxmint
+#      PURPOSE:
+#   PARAMETERS: pattern
+#      RETURNS: ref to hash
+#  DESCRIPTION: ????
+#       THROWS: no exceptions
+#     COMMENTS: none
+#     SEE ALSO: find_package_debian
+#===============================================================================
+    &find_package_debian;
+} # end of sub find_package_linuxmint }}}
+#
 #  Main program
-#---------------------------------------------------------------------------
+#
 my ($pattern, $rawpattern);
 $rawpattern = $ARGV[0];
 if ($rawpattern){
@@ -339,12 +307,24 @@ if ( not defined $pattern ) {
     print {*STDERR} "Pattern is not defined, try $NAME -h";
     exit 0;
 }
-my $distribution_name = distribution_name;
+
+# Take distribution name from command line
+my $distribution_name;
+# sub from Linux::Distribution
+my $distribution_sub = \&{'distribution_name'};
+if ( $option{os} ){
+    $distribution_name = lc $option{os};
+}
+# or find
+elsif ( exists &$distribution_sub ){
+    $distribution_name = &$distribution_sub;
+}
+
 if (!$distribution_name){
     print q{I don't know this system}, "\n";
     exit;
 }
-my $distribution_sub =  'find_package_' . $distribution_name;
+$distribution_sub =  'find_package_' . $distribution_name;
 my $list_programs = {};
 if ( exists &{$distribution_sub} ){
     {
@@ -366,37 +346,49 @@ __END__
 
 =head1 NAME
 
-lspack - szukaj pakietu pasującego do wzorca wśród zainstalowanych w systemie
+lspack - search in installed packages which match to pattern
 
 =head1 USAGE
 
-lspack wzorzec [opcje]
+lspack.pl [pattern] [-vdshV]
 
 =head1 OPTIONS
 
-I<-v> pokaż wersję znalezionych pakietów
+=over 4
 
-I<-d> pokaż opisy znalezionych pakietów
+=item I<-v, --print-version>
+Show version of package
 
-I<-s> szukaj także w opisach 
+=item I<-d, --print-desc>
+Show description of package
 
-I<-h> pokaż pomoc
+=item I<-a, --print-arch>
+Show architecture of package
 
-I<-V> o programie 
+=item I<-s, --search>
+Search in description too
+
+=item I<-o name, --os name>
+Name of Operataing System or detect by Linux::Distribution module
+
+=item I<-h, --help>
+Show help
+
+=item I<-c, --color>
+Print in colors
+
+=back
 
 =head1 DESCRIPTION
 
-Program wyszukuje pakiety pasujące do wzorca wśród zainstalowanych w systemie. Wyszukiwać można po nazwie lub opisie. Skrypt ten jest nakładką na domyślne programy zainstalowane w systemie.
-Domyślnie program wyszukuje pakiety pasujące tylko do nazwy i wyświetla tylko ich nazwy. Można to zmienić opcją I<-s> wówczas będzie również dopasowywał do opisu. Opcja I<-d> wyświetla dodatkowo opis pakietu a I<-v> wersję.
-Parametry można łączyć.
-Opcja I<-h> wyświetla krótką pomoc a I<-V> krótką informację o wersji skryptu i autorze.
+Program search a program among all installed packages which match to pattern. Pattern may be compared with name or description of packages.
 
 =head1 AUTHOR
 
-Piotr Rogoża rogoza.piotr@gmail.com
+Piotr Rogoza E<lt>piotr.r.public@gmail.comE<gt>
 
 =head1 LICENSE AND COPYRIGHT
 
-Program  jest  dystrybuowany  na  zasadach  licencji  GNU  General  Public License.
+as-is
 
 =cut

@@ -1,0 +1,6 @@
+Revision history for Perl extension lspack.
+
+0.01  Mon Feb 16 22:07:27 2015
+	- original version; created by h2xs 1.23 with options
+		--skip-exporter --skip-autoloader -AX -n lspack
+
